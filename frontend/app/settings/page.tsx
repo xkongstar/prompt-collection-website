@@ -342,7 +342,7 @@ const SettingsPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">语言</label>
                   <Select
                     value={settings.preferences.language}
-                    onValueChange={(value) => updateSettings('preferences', { language: value })}
+                    onChange={(value) => updateSettings('preferences', { language: value as string })}
                     options={languageOptions}
                   />
                 </div>
@@ -359,7 +359,7 @@ const SettingsPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">每页显示项目数</label>
                   <Select
                     value={settings.preferences.itemsPerPage.toString()}
-                    onValueChange={(value) => updateSettings('preferences', { itemsPerPage: parseInt(value) })}
+                    onChange={(value) => updateSettings('preferences', { itemsPerPage: parseInt(value as string) })}
                     options={itemsPerPageOptions}
                   />
                 </div>
@@ -368,7 +368,7 @@ const SettingsPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">默认排序方式</label>
                   <Select
                     value={settings.preferences.defaultSortBy}
-                    onValueChange={(value) => updateSettings('preferences', { defaultSortBy: value as any })}
+                    onChange={(value) => updateSettings('preferences', { defaultSortBy: value as 'createdAt' | 'updatedAt' | 'usageCount' | 'name' })}
                     options={sortByOptions}
                   />
                 </div>
@@ -499,7 +499,7 @@ const SettingsPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">个人资料可见性</label>
                   <Select
                     value={settings.privacy.profileVisibility}
-                    onValueChange={(value) => updateSettings('privacy', { profileVisibility: value as any })}
+                    onChange={(value) => updateSettings('privacy', { profileVisibility: value as 'public' | 'private' })}
                     options={privacyOptions}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -658,10 +658,17 @@ const SettingsPage: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                {tabs.find(tab => tab.id === activeTab)?.icon && (
-                  <tabs.find(tab => tab.id === activeTab)!.icon className="w-5 h-5 mr-2" />
-                )}
-                {tabs.find(tab => tab.id === activeTab)?.label}
+                {(() => {
+                  const activeTabData = tabs.find(tab => tab.id === activeTab);
+                  if (!activeTabData) return null;
+                  const IconComponent = activeTabData.icon;
+                  return (
+                    <>
+                      <IconComponent className="w-5 h-5 mr-2" />
+                      {activeTabData.label}
+                    </>
+                  );
+                })()}
               </CardTitle>
             </CardHeader>
             <CardContent>
