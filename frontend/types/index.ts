@@ -20,6 +20,7 @@ export interface Category {
   updatedAt: string;
   parent?: Category;
   children?: Category[];
+  promptCount?: number; // 来自API响应，包含关联的提示词数量
 }
 
 export interface Tag {
@@ -28,6 +29,7 @@ export interface Tag {
   name: string;
   color: string;
   createdAt: string;
+  promptCount?: number; // 来自API响应，包含关联的提示词数量
 }
 
 export interface Prompt {
@@ -161,3 +163,88 @@ export interface PaginatedResponse<T> {
     };
   };
 }
+
+// Category相关的DTO类型
+export interface CreateCategoryDto {
+  name: string;
+  description?: string;
+  color?: string;
+  parentId?: number;
+  sortOrder?: number;
+}
+
+export interface UpdateCategoryDto extends Partial<CreateCategoryDto> {}
+
+export interface CategoryFilters {
+  search?: string;
+  parentId?: number;
+}
+
+// Tag相关的DTO类型
+export interface CreateTagDto {
+  name: string;
+  color?: string;
+}
+
+export interface UpdateTagDto extends Partial<CreateTagDto> {}
+
+export interface TagFilters {
+  search?: string;
+}
+
+export interface BatchCreateTagsDto {
+  tags: Array<{
+    name: string;
+    color?: string;
+  }>;
+}
+
+// Tag统计类型
+export interface TagStats {
+  id: number;
+  name: string;
+  color: string;
+  promptCount: number;
+  createdAt: string;
+}
+
+// 用户设置相关类型
+export interface UpdateUserDto {
+  username?: string;
+  avatarUrl?: string;
+  settings?: Record<string, string | number | boolean>;
+}
+
+// UI状态类型
+export interface UIState {
+  theme: 'light' | 'dark';
+  sidebarCollapsed: boolean;
+  loading: boolean;
+  error: string | null;
+}
+
+// 搜索历史类型
+export interface SearchHistoryItem {
+  id: string;
+  query: string;
+  timestamp: string;
+  filters?: PromptFilters;
+}
+
+// 导出状态类型
+export interface ExportOptions {
+  format: 'json' | 'csv' | 'markdown';
+  includeCategories: boolean;
+  includeTags: boolean;
+  includeMetadata: boolean;
+}
+
+// 错误类型
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+// 通用的ID类型
+export type ID = number | string;
