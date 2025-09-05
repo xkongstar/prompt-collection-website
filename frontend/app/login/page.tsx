@@ -1,27 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
-import { api } from '@/lib/api';
-import { AuthResponse } from '@/types';
-
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+import { useAuthStore } from '@/lib/stores/authStore';
+import { LoginDto } from '@/types';
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState<LoginFormData>({
+  const { login, isLoading, error, clearError, isAuthenticated, isInitialized } = useAuthStore();
+  
+  const [formData, setFormData] = useState<LoginDto>({
     email: '',
     password: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // 如果已登录，重定向到提示词页面
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) {
+      router.push('/prompts');
+    }
+  }, [isInitialized, isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,49 +32,19 @@ const LoginPage: React.FC = () => {
       [name]: value
     }));
     // 清除错误信息
-    if (error) setError(null);
+    if (error) clearError();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      setError('请填写所有字段');
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await api.post<AuthResponse>('/auth/login', formData);
-      
-      if (response.data.success && response.data.data) {
-        const { user, token } = response.data.data;
-        
-        // 保存token到localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        // 跳转到提示词页面
-        router.push('/prompts');
-      } else {
-        setError(response.data.error?.message || '登录失败');
-      }
-    } catch (err: unknown) {
-      console.error('登录失败:', err);
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
-        setError(
-          axiosError.response?.data?.error?.message || 
-          axiosError.message || 
-          '登录失败，请重试'
-        );
-      } else {
-        setError('登录失败，请重试');
-      }
-    } finally {
-      setLoading(false);
+    const success = await login(formData);
+    if (success) {
+      router.push('/prompts');
     }
   };
 
@@ -128,9 +100,9 @@ const LoginPage: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                loading={loading}
+                loading={isLoading}
               >
-                {loading ? '登录中...' : '登录'}
+                {isLoading ? '登录中...' : '登录'}
               </Button>
 
               <div className="text-center text-sm text-gray-600 dark:text-gray-400">

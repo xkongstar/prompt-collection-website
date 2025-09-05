@@ -6,6 +6,9 @@ import { ArrowLeft, Plus, X, Save, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
+import { Badge } from '@/components/ui/Badge';
 import { usePromptStore } from '@/lib/stores/promptStore';
 import { api } from '@/lib/api';
 import { Prompt, UpdatePromptDto } from '@/types';
@@ -198,10 +201,9 @@ const EditPromptPage: React.FC = () => {
   if (fetchLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">加载中...</p>
-        </div>
+        <Spinner size="lg" center>
+          <p className="text-gray-600 mt-4">加载中...</p>
+        </Spinner>
       </div>
     );
   }
@@ -252,8 +254,10 @@ const EditPromptPage: React.FC = () => {
 
         {/* 错误提示 */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div className="mb-6">
+            <Alert variant="destructive" closable onClose={() => setError(null)}>
+              {error}
+            </Alert>
           </div>
         )}
 
@@ -437,19 +441,14 @@ const EditPromptPage: React.FC = () => {
               {formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag, index) => (
-                    <span
+                    <Badge
                       key={index}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      variant="secondary"
+                      closable
+                      onClose={() => removeTag(index)}
                     >
                       {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(index)}
-                        className="ml-1 text-blue-600 hover:text-blue-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -493,7 +492,7 @@ const EditPromptPage: React.FC = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <Spinner size="xs" className="mr-2" />
                   保存中...
                 </>
               ) : (

@@ -6,6 +6,12 @@ import { ArrowLeft, Plus, X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Select } from '@/components/ui/Select';
+import { MultiSelect } from '@/components/ui/MultiSelect';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
+import { Badge } from '@/components/ui/Badge';
+import { Form, FormField, FormLabel, FormError, FormHelp } from '@/components/ui/Form';
 import { usePromptStore } from '@/lib/stores/promptStore';
 import { CreatePromptDto, Category } from '@/types';
 import { api } from '@/lib/api';
@@ -194,8 +200,10 @@ const CreatePromptPage: React.FC = () => {
 
         {/* 错误提示 */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div className="mb-6">
+            <Alert variant="destructive" closable onClose={() => setError(null)}>
+              {error}
+            </Alert>
           </div>
         )}
 
@@ -233,26 +241,26 @@ const CreatePromptPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  分类
-                </label>
-                <select
-                  value={formData.categoryId || ''}
-                  onChange={(e) => setFormData(prev => ({ 
+              <FormField>
+                <FormLabel>分类</FormLabel>
+                <Select
+                  value={formData.categoryId?.toString()}
+                  onValueChange={(value) => setFormData(prev => ({ 
                     ...prev, 
-                    categoryId: e.target.value ? parseInt(e.target.value) : undefined 
+                    categoryId: value ? parseInt(value) : undefined 
                   }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">选择分类（可选）</option>
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  options={[
+                    { value: '', label: '选择分类（可选）' },
+                    ...categories.map(category => ({
+                      value: category.id.toString(),
+                      label: category.name
+                    }))
+                  ]}
+                  placeholder="选择分类（可选）"
+                  className="w-full"
+                />
+                <FormHelp>选择一个分类来组织您的提示词</FormHelp>
+              </FormField>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,19 +408,14 @@ const CreatePromptPage: React.FC = () => {
               {formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag, index) => (
-                    <span
+                    <Badge
                       key={index}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      variant="secondary"
+                      closable
+                      onClose={() => removeTag(index)}
                     >
                       {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(index)}
-                        className="ml-1 text-blue-600 hover:text-blue-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -456,7 +459,7 @@ const CreatePromptPage: React.FC = () => {
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <Spinner size="xs" className="mr-2" />
                   创建中...
                 </>
               ) : (
