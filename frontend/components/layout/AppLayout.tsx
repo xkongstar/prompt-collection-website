@@ -6,6 +6,7 @@ import Header from './ImprovedHeader';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import Navigation from './Navigation';
+import { NotificationProvider } from '@/components/providers';
 import { useUIStore, useAuthStore } from '@/lib/stores';
 import { cn } from '@/lib/utils';
 
@@ -42,38 +43,40 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const showSidebar = sidebarState !== 'closed';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* 顶部导航栏 */}
-      <Header />
-      
-      <div className="flex-1 flex">
-        {/* 侧边栏 */}
-        {showSidebar && (
-          <Sidebar className="hidden lg:flex flex-col" />
-        )}
+    <NotificationProvider position="top-right" maxVisible={5}>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* 顶部导航栏 */}
+        <Header />
         
-        {/* 主要内容区域 */}
-        <main className={cn(
-          "flex-1 flex flex-col",
-          showSidebar && "lg:ml-0" // 侧边栏显示时，main不需要额外margin
-        )}>
-          {/* 面包屑导航 */}
-          <div className="border-b border-border bg-muted/20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-              <Navigation />
-            </div>
-          </div>
+        <div className="flex-1 flex">
+          {/* 侧边栏 */}
+          {showSidebar && (
+            <Sidebar className="hidden lg:flex flex-col" />
+          )}
           
-          {/* 页面内容 */}
-          <div className="flex-1">
-            {children}
-          </div>
-        </main>
+          {/* 主要内容区域 */}
+          <main className={cn(
+            "flex-1 flex flex-col",
+            showSidebar && "lg:ml-0" // 侧边栏显示时，main不需要额外margin
+          )}>
+            {/* 面包屑导航 */}
+            <div className="border-b border-border bg-muted/20">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <Navigation />
+              </div>
+            </div>
+            
+            {/* 页面内容 */}
+            <div className="flex-1">
+              {children}
+            </div>
+          </main>
+        </div>
+        
+        {/* 底部 */}
+        <Footer />
       </div>
-      
-      {/* 底部 */}
-      <Footer />
-    </div>
+    </NotificationProvider>
   );
 };
 

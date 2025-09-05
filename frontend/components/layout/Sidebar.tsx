@@ -13,7 +13,9 @@ import {
   TrendingUp,
   Star,
   Clock,
-  Hash
+  Hash,
+  BarChart3,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -66,6 +68,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       label: '概览',
       icon: Home,
       isActive: pathname === '/'
+    },
+    {
+      href: '/dashboard',
+      label: '仪表板',
+      icon: BarChart3,
+      isActive: pathname === '/dashboard'
     },
     {
       href: '/prompts',
