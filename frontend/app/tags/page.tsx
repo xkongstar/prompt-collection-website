@@ -16,6 +16,10 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
+import { Modal } from '@/components/ui/Modal';
+import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
 import { Tag } from '@/types';
 
@@ -42,6 +46,9 @@ const TagsPage: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<Tag | null>(null);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchTagNames, setBatchTagNames] = useState('');
 
   // 获取标签列表
   const fetchTags = async (search?: string) => {
@@ -142,13 +149,10 @@ const TagsPage: React.FC = () => {
 
   // 删除标签
   const handleDelete = async (tag: Tag) => {
-    if (!window.confirm(`确定要删除标签"${tag.name}"吗？`)) {
-      return;
-    }
-
     try {
       await api.delete(`/tags/${tag.id}`);
       setTags(prev => prev.filter(t => t.id !== tag.id));
+      setShowDeleteModal(null);
     } catch (err) {
       console.error('删除标签失败:', err);
       setError('删除标签失败');
@@ -157,13 +161,19 @@ const TagsPage: React.FC = () => {
 
   // 批量创建标签
   const handleBatchCreate = async () => {
-    const tagNames = prompt('请输入标签名称，用逗号分隔:');
-    if (!tagNames) return;
+    if (!batchTagNames.trim()) {
+      setError('请输入标签名称');
+      return;
+    }
 
-    const names = tagNames.split(',').map(name => name.trim()).filter(name => name);
-    if (names.length === 0) return;
+    const names = batchTagNames.split(',').map(name => name.trim()).filter(name => name);
+    if (names.length === 0) {
+      setError('请输入有效的标签名称');
+      return;
+    }
 
     try {
+      setSubmitting(true);
       const tagData = names.map((name, index) => ({
         name,
         color: COLORS[index % COLORS.length]
@@ -173,10 +183,14 @@ const TagsPage: React.FC = () => {
       
       if (response.data.success) {
         fetchTags(); // 重新获取标签列表
+        setBatchTagNames('');
+        setShowBatchModal(false);
       }
     } catch (err) {
       console.error('批量创建标签失败:', err);
       setError('批量创建标签失败');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -207,7 +221,7 @@ const TagsPage: React.FC = () => {
           
           <div className="flex gap-3">
             <Button
-              onClick={handleBatchCreate}
+              onClick={() => setShowBatchModal(true)}
               variant="outline"
               className="border-blue-200 text-blue-600 hover:bg-blue-50"
             >
@@ -226,8 +240,10 @@ const TagsPage: React.FC = () => {
 
         {/* 错误提示 */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div className="mb-6">
+            <Alert variant="destructive" closable onClose={() => setError(null)}>
+              {error}
+            </Alert>
           </div>
         )}
 
@@ -267,8 +283,8 @@ const TagsPage: React.FC = () => {
               <CardContent>
                 {loading ? (
                   <div className="text-center py-8">
-                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">加载中...</p>
+                    <Spinner size="lg" center />
+                    <p className="text-gray-600 mt-4">加载中...</p>
                   </div>
                 ) : tags.length === 0 ? (
                   <div className="text-center py-8">
@@ -297,9 +313,9 @@ const TagsPage: React.FC = () => {
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
+                          <Badge 
                             style={{ backgroundColor: tag.color }}
+                            className="w-4 h-4 p-0 min-w-0"
                           />
                           <div>
                             <h3 className="font-medium text-gray-900">{tag.name}</h3>
@@ -320,7 +336,7 @@ const TagsPage: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDelete(tag)}
+                            onClick={() => setShowDeleteModal(tag)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -403,7 +419,7 @@ const TagsPage: React.FC = () => {
                       >
                         {submitting ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            <Spinner size="xs" className="mr-2" />
                             保存中...
                           </>
                         ) : (
@@ -450,6 +466,88 @@ const TagsPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* 删除确认模态框 */}
+        {showDeleteModal && (
+          <Modal
+            open={!!showDeleteModal}
+            onClose={() => setShowDeleteModal(null)}
+            title="删除标签"
+            description={`确定要删除标签"${showDeleteModal.name}"吗？该操作无法撤销。`}
+            size="sm"
+          >
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(null)}
+              >
+                取消
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(showDeleteModal)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                删除
+              </Button>
+            </div>
+          </Modal>
+        )}
+
+        {/* 批量创建模态框 */}
+        {showBatchModal && (
+          <Modal
+            open={showBatchModal}
+            onClose={() => setShowBatchModal(false)}
+            title="批量创建标签"
+            description="输入标签名称，用逗号分隔，系统将自动分配颜色"
+            size="md"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  标签名称 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={batchTagNames}
+                  onChange={(e) => setBatchTagNames(e.target.value)}
+                  placeholder="例如: 前端开发, 后端开发, 数据库, 机器学习"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+                  rows={4}
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  用逗号分隔多个标签名称，系统将自动为每个标签分配颜色
+                </p>
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBatchModal(false)}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={handleBatchCreate}
+                  disabled={submitting || !batchTagNames.trim()}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  {submitting ? (
+                    <>
+                      <Spinner size="xs" className="mr-2" />
+                      创建中...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      创建标签
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
       </div>
     </div>
   );

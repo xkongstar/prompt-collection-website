@@ -8,9 +8,17 @@ import {
   Tag, 
   Home, 
   LogOut,
-  Menu
+  Menu,
+  User,
+  Settings,
+  Bell,
+  Search,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { useAuthStore, useUIStore } from '@/lib/stores';
+import ThemeToggle from './ThemeToggle';
 import { cn } from '@/lib/utils';
 
 const Header: React.FC = () => {
