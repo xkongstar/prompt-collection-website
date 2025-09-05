@@ -14,6 +14,10 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
+import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
 import { api } from '@/lib/api';
 import { Category } from '@/types';
 
@@ -34,6 +38,7 @@ const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<Category | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({
     name: '',
@@ -146,13 +151,10 @@ const CategoriesPage: React.FC = () => {
 
   // 删除分类
   const handleDelete = async (category: Category) => {
-    if (!window.confirm(`确定要删除分类"${category.name}"吗？`)) {
-      return;
-    }
-
     try {
       await api.delete(`/categories/${category.id}`);
       setCategories(prev => prev.filter(cat => cat.id !== category.id));
+      setShowDeleteModal(null);
     } catch (err) {
       console.error('删除分类失败:', err);
       setError('删除分类失败');
@@ -191,7 +193,7 @@ const CategoriesPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDelete(category)}
+              onClick={() => setShowDeleteModal(category)}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
@@ -243,8 +245,10 @@ const CategoriesPage: React.FC = () => {
 
         {/* 错误提示 */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+          <div className="mb-6">
+            <Alert variant="destructive" closable onClose={() => setError(null)}>
+              {error}
+            </Alert>
           </div>
         )}
 
@@ -261,8 +265,8 @@ const CategoriesPage: React.FC = () => {
               <CardContent>
                 {loading ? (
                   <div className="text-center py-8">
-                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">加载中...</p>
+                    <Spinner size="lg" center />
+                    <p className="text-gray-600 mt-4">加载中...</p>
                   </div>
                 ) : categories.length === 0 ? (
                   <div className="text-center py-8">
@@ -335,23 +339,24 @@ const CategoriesPage: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         父分类
                       </label>
-                      <select
-                        value={formData.parentId || ''}
-                        onChange={(e) => setFormData(prev => ({ 
+                      <Select
+                        value={formData.parentId?.toString()}
+                        onValueChange={(value) => setFormData(prev => ({ 
                           ...prev, 
-                          parentId: e.target.value ? parseInt(e.target.value) : undefined 
+                          parentId: value ? parseInt(value) : undefined 
                         }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">无（顶级分类）</option>
-                        {categories
-                          .filter(cat => !editingCategory || cat.id !== editingCategory.id)
-                          .map(category => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                      </select>
+                        options={[
+                          { value: '', label: '无（顶级分类）' },
+                          ...categories
+                            .filter(cat => !editingCategory || cat.id !== editingCategory.id)
+                            .map(category => ({
+                              value: category.id.toString(),
+                              label: category.name
+                            }))
+                        ]}
+                        placeholder="选择父分类"
+                        className="w-full"
+                      />
                     </div>
 
                     <div>
@@ -391,7 +396,7 @@ const CategoriesPage: React.FC = () => {
                       >
                         {submitting ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            <Spinner size="xs" className="mr-2" />
                             保存中...
                           </>
                         ) : (
@@ -408,6 +413,33 @@ const CategoriesPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* 删除确认模态框 */}
+        {showDeleteModal && (
+          <Modal
+            open={!!showDeleteModal}
+            onClose={() => setShowDeleteModal(null)}
+            title="删除分类"
+            description={`确定要删除分类"${showDeleteModal.name}"吗？该操作无法撤销。`}
+            size="sm"
+          >
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(null)}
+              >
+                取消
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(showDeleteModal)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                删除
+              </Button>
+            </div>
+          </Modal>
+        )}
       </div>
     </div>
   );
